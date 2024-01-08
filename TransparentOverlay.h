@@ -16,6 +16,7 @@ private:
     void createWindow();
     void initOpenGL();
     void renderText(const char* text, float x, float y, float sx, float sy);
+    void renderRectangle();
 
     HWND hwnd;
     HINSTANCE hInstance;

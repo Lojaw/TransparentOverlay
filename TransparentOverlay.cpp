@@ -3,12 +3,15 @@
 #include <iostream>
 #include <gl/GL.h>
 #include <gl/GLU.h>
+#include <fstream>
+#include <string>
 //TransparentOverlay.cpp
 
 int screenWidth = GetSystemMetrics(SM_CXSCREEN);
 int screenHeight = GetSystemMetrics(SM_CYSCREEN);
 
 TransparentOverlay::TransparentOverlay() {
+    // Verwendung
     this->hInstance = GetModuleHandle(NULL);
     if (FT_Init_FreeType(&ft)) {
         std::cerr << "Could not init FreeType library" << std::endl;
@@ -34,11 +37,18 @@ TransparentOverlay::~TransparentOverlay() {
 
 void TransparentOverlay::Run() {
     createWindow();
+    std::cout << "Fenster erstellt." << std::endl;
+
     MSG msg = {};
     while (GetMessage(&msg, NULL, 0, 0)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
-        renderText("Hello World", screenWidth / 2.0f, screenHeight / 2.0f, 0.5f, 0.5f);
+
+        std::cout << "Nachricht verarbeitet: " << msg.message << std::endl;
+
+        //renderText("Hello World", screenWidth / 2.0f, screenHeight / 2.0f, 0.5f, 0.5f);
+        InvalidateRect(hwnd, NULL, FALSE); // Markiert den gesamten Bereich des Fensters als ungültig
+        UpdateWindow(hwnd); // Erzwingt ein Update des Fensters
     }
 }
 
@@ -68,6 +78,7 @@ void TransparentOverlay::createWindow() {
     UpdateWindow(this->hwnd);
 
     // OpenGL-Initialisierung
+    SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
     initOpenGL();
 }
 
@@ -95,6 +106,8 @@ void TransparentOverlay::initOpenGL() {
     wglMakeCurrent(this->hdc, this->hglrc);
 
     // Weitere OpenGL-Einrichtung (z.B. GLEW-Initialisierung, falls verwendet)
+    glDisable(GL_DEPTH_TEST); // Deaktivieren Sie den Tiefentest für 2D-Zeichnungen
+    glDisable(GL_LIGHTING); // Deaktivieren Sie Beleuchtung
 }
 
 void TransparentOverlay::renderText(const char* text, float x, float y, float sx, float sy) {
@@ -146,6 +159,27 @@ void TransparentOverlay::renderText(const char* text, float x, float y, float sx
     }
 }
 
+void TransparentOverlay::renderRectangle() {
+    std::cout << "Beginne mit dem Rendering des Rechtecks." << std::endl;
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, screenWidth, screenHeight, 0, -1, 1);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    glColor3f(1.0f, 0.0f, 0.0f); // Rote Farbe
+
+    glBegin(GL_QUADS); // Beginn des Zeichnens eines Rechtecks
+    glVertex2f(100.0f, 100.0f); // Oben links
+    glVertex2f(200.0f, 100.0f); // Oben rechts
+    glVertex2f(200.0f, 200.0f); // Unten rechts
+    glVertex2f(100.0f, 200.0f); // Unten links
+    glEnd(); // Ende des Zeichnens
+    std::cout << "Rendering des Rechtecks abgeschlossen." << std::endl;
+}
+
+
 LRESULT TransparentOverlay::handleMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
     case WM_PAINT: {
@@ -155,7 +189,8 @@ LRESULT TransparentOverlay::handleMessage(HWND hwnd, UINT uMsg, WPARAM wParam, L
         // Hier OpenGL-Rendering-Aufrufe
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         // Funktion zum Rendern von Text aufrufen
-        renderText("Hello World", screenWidth / 2.0f, screenHeight / 2.0f, 0.5f, 0.5f);
+        //renderText("Hello World", screenWidth / 2.0f, screenHeight / 2.0f, 0.5f, 0.5f);
+        renderRectangle();
         SwapBuffers(hdc);
 
         EndPaint(hwnd, &ps);
@@ -183,5 +218,3 @@ LRESULT CALLBACK TransparentOverlay::WindowProc(HWND hwnd, UINT uMsg, WPARAM wPa
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
-
-
